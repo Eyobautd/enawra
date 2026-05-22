@@ -1,8 +1,15 @@
-const ex = require('express');
 require('dotenv').config();
+const ex = require('express');
+const connectDB = require('./config/db');
 const app = ex();
 
+connectDB();
 app.use(ex.json());
+
+const authRoutes = require('./routes/authRoutes');
+
+app.use('/api/auth', authRoutes);
+
 app.get('/', (req, res) => {
     res.status(200).json({ message: 'Welcome to Enawra API' });
 });
