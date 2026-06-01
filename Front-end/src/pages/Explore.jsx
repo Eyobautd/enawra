@@ -1,35 +1,67 @@
-import { useMemo, useState } from "react";
-
-const people = [
-  { name: "Amina Chen", username: "@aminac", bio: "UI designer and sketch artist." },
-  { name: "Jalen Brooks", username: "@jbrooks", bio: "Product manager building smart apps." },
-  { name: "Priya Patel", username: "@priyap", bio: "Frontend engineer who loves accessibility." },
-  { name: "Noah Kim", username: "@noahk", bio: "Growth marketer and community builder." },
-  { name: "Mira Alvarez", username: "@mira_dev", bio: "React dev, coffee enthusiast." },
-];
+import { useEffect, useState } from "react";
+import { api } from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 export default function Explore() {
+  const { user: currentUser } = useAuth();
   const [query, setQuery] = useState("");
+  const [people, setPeople] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const filteredPeople = useMemo(() => {
-    const lowercaseQuery = query.toLowerCase();
-    return people.filter(
-      (person) =>
-        person.name.toLowerCase().includes(lowercaseQuery) ||
-        person.username.toLowerCase().includes(lowercaseQuery) ||
-        person.bio.toLowerCase().includes(lowercaseQuery)
-    );
+  const search = async () => {
+    setLoading(true);
+    try {
+      const results = await api.users.searchUsers(query);
+      setPeople(results);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to load users");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      search();
+    }, 300);
+    return () => clearTimeout(timer);
   }, [query]);
+
+  const handleFollowToggle = async (personId) => {
+    try {
+      const data = await api.users.toggleFollow(personId);
+      
+      setPeople((prevPeople) =>
+        prevPeople.map((person) => {
+          if (person._id === personId) {
+            const currentUserId = currentUser?._id || currentUser?.id;
+            const updatedFollowers = data.isFollowing
+              ? [...(person.followers || []), currentUserId]
+              : (person.followers || []).filter((id) => id !== currentUserId);
+            return { ...person, followers: updatedFollowers };
+          }
+          return person;
+        })
+      );
+    } catch (err) {
+      console.error("Error toggling follow:", err);
+      alert(err.message || "Failed to update follow status");
+    }
+  };
+
+  const defaultAvatar = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRDR8H0rgV-zmSodkT_erGjzA_VhfWE22Pg7Q&s";
 
   return (
     <main className="p-6">
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-5 max-w-2xl mx-auto">
         <div>
-          <h1 className="text-3xl font-bold">Explore people</h1>
-          <p className="text-gray-600 mt-2">Search for people to connect with and follow.</p>
+          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Explore People</h1>
+          <p className="text-gray-500 mt-2 text-sm">Find and connect with fellow creators on Enawra.</p>
         </div>
 
-        <div className="max-w-xl">
+        <div>
           <label className="sr-only" htmlFor="search">
             Search people
           </label>
@@ -38,33 +70,58 @@ export default function Explore() {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by name, handle, or bio"
-            className="w-full rounded-xl border border-gray-300 px-4 py-3 text-black focus:border-black focus:outline-none focus:ring-2 focus:ring-black/10"
+            placeholder="Search by name or username..."
+            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-black placeholder-gray-400 bg-white focus:border-black focus:outline-none focus:ring-2 focus:ring-black/10 text-sm"
           />
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          {filteredPeople.length > 0 ? (
-            filteredPeople.map((person) => (
-              <div key={person.handle} className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-lg font-semibold text-black">{person.name}</p>
-                    <p className="text-sm text-gray-500">{person.username}</p>
+        {loading ? (
+          <div className="text-center py-12 text-gray-400 font-medium">Searching creators...</div>
+        ) : error ? (
+          <div className="text-center py-8 text-red-500 font-medium">{error}</div>
+        ) : people.length === 0 ? (
+          <div className="rounded-2xl border border-gray-200 bg-white p-8 text-center text-gray-500 font-medium shadow-sm">
+            No creators found matching your search.
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2">
+            {people.map((person) => {
+              const currentUserId = currentUser?._id || currentUser?.id;
+              const isFollowing = person.followers?.includes(currentUserId);
+
+              return (
+                <div key={person._id} className="rounded-2xl border border-gray-150 bg-white p-5 shadow-sm transition hover:shadow-md duration-200 flex flex-col justify-between">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={person.profilePhoto || defaultAvatar}
+                        alt={person.fullName}
+                        className="w-12 h-12 rounded-full object-cover border border-gray-200"
+                      />
+                      <div>
+                        <p className="text-base font-semibold text-gray-950 leading-snug">{person.fullName}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">@{person.username}</p>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => handleFollowToggle(person._id)}
+                      className={`rounded-xl border px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
+                        isFollowing 
+                          ? "bg-gray-100 border-gray-200 text-gray-600 hover:bg-gray-200" 
+                          : "bg-black border-black text-white hover:bg-gray-800"
+                      }`}
+                    >
+                      {isFollowing ? "Unfollow" : "Follow"}
+                    </button>
                   </div>
-                  <button className="rounded-full border border-black px-4 py-2 text-black transition hover:bg-black hover:text-white">
-                    Follow
-                  </button>
+                  <div className="mt-4 text-[10px] text-gray-400 font-semibold uppercase tracking-wider bg-gray-50 p-2.5 rounded-lg border border-gray-50 text-center">
+                    Joined Enawra on {new Date(person.joinedAt).toLocaleDateString()}
+                  </div>
                 </div>
-                <p className="mt-3 text-gray-600">{person.bio}</p>
-              </div>
-            ))
-          ) : (
-            <div className="rounded-3xl border border-gray-200 bg-white p-6 text-center text-gray-600 shadow-sm">
-              No results found. Try another search term.
-            </div>
-          )}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </main>
   );
