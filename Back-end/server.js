@@ -1,14 +1,26 @@
 require('dotenv').config();
 const ex = require('express');
+const cors = require('cors');
 const connectDB = require('./config/db');
 const app = ex();
 
 connectDB();
+app.use(cors());
 app.use(ex.json());
 
 const authRoutes = require('./routes/authRoutes');
+const postRoutes = require('./routes/postRoutes');
+const commentRoutes = require('./routes/commentRoutes');
+const likeRoutes = require('./routes/likeRoutes');
+const userRoutes = require('./routes/userRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 
 app.use('/api/auth', authRoutes);
+app.use('/api/posts', postRoutes);
+app.use('/api/comments', commentRoutes);
+app.use('/api/likes', likeRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 app.get('/', (req, res) => {
     res.status(200).json({ message: 'Welcome to Enawra API' });
