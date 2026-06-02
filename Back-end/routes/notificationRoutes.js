@@ -1,0 +1,9 @@
+const ex = require('express');
+const router = ex.Router();
+const notificationController = require('../controllers/notificationController');
+const { protect } = require('../middleware/authMiddleware');
+
+router.get('/', protect, notificationController.getNotifications);
+router.put('/read', protect, notificationController.markAsRead);
+
+module.exports = router;
