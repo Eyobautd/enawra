@@ -8,10 +8,18 @@ export default function Home() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [activeTab, setActiveTab] = useState("explore");
 
-  const fetchFeed = async () => {
+  const fetchFeed = async (tab) => {
+    setLoading(true);
+    setError("");
     try {
-      const data = await api.posts.getFeed();
+      let data;
+      if (tab === "explore") {
+        data = await api.posts.getFeed();
+      } else {
+        data = await api.posts.getFollowingFeed();
+      }
       setPosts(data);
     } catch (err) {
       setError("Failed to fetch feed");
@@ -22,8 +30,8 @@ export default function Home() {
   };
 
   useEffect(() => {
-    fetchFeed();
-  }, []);
+    fetchFeed(activeTab);
+  }, [activeTab]);
 
   const handlePostCreated = (newPost) => {
     setPosts((prevPosts) => [newPost, ...prevPosts]);
@@ -37,6 +45,31 @@ export default function Home() {
     <div className="flex">
       <main className="flex-1 p-6">
         <CreatePost onPostCreated={handlePostCreated} />
+
+        {/* Feed Segmentation Tabs */}
+        <div className="flex mb-6 border-b border-gray-200">
+          <button
+            onClick={() => setActiveTab("explore")}
+            className={`flex-1 py-3 text-sm font-semibold text-center transition ${
+              activeTab === "explore"
+                ? "text-black border-b-2 border-black"
+                : "text-gray-400 hover:text-gray-700"
+            }`}
+          >
+            Explore
+          </button>
+          <button
+            onClick={() => setActiveTab("following")}
+            className={`flex-1 py-3 text-sm font-semibold text-center transition ${
+              activeTab === "following"
+                ? "text-black border-b-2 border-black"
+                : "text-gray-400 hover:text-gray-700"
+            }`}
+          >
+            Following
+          </button>
+        </div>
+
         {loading ? (
           <div className="text-center py-12 text-gray-500 font-medium">
             <div className="animate-pulse flex flex-col items-center gap-3">

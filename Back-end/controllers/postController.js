@@ -1,6 +1,7 @@
 const Post = require('../models/Post');
 const Comment = require('../models/Comment');
 const Like = require('../models/Like');
+const User = require('../models/User');
 
 // Create a post
 exports.createPost = async (req, res) => {
@@ -58,6 +59,41 @@ exports.getFeed = async (req, res) => {
     res.status(200).json(postsWithStats);
   } catch (error) {
     res.status(500).json({ message: 'Server error fetching feed: ' + error.message });
+  }
+};
+
+// Get following feed
+exports.getFollowingFeed = async (req, res) => {
+  try {
+    const currentUser = await User.findById(req.user.id);
+    if (!currentUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const followingIds = currentUser.following || [];
+    
+    // Also include own posts? Usually yes, but the user didn't explicitly ask. Let's just do following for now, or both.
+    // "Fetch and render posts exclusively from user IDs present in the current user's following array." -> so only following.
+    const posts = await Post.find({ author: { $in: followingIds } })
+      .populate('author', 'username fullName profilePhoto')
+      .sort({ createdAt: -1 });
+
+    const postsWithStats = await Promise.all(posts.map(async (post) => {
+      const likesCount = await Like.countDocuments({ post: post._id });
+      const commentsCount = await Comment.countDocuments({ post: post._id });
+      const userLike = await Like.findOne({ post: post._id, user: req.user.id });
+
+      return {
+        ...post.toObject(),
+        likesCount,
+        commentsCount,
+        liked: !!userLike
+      };
+    }));
+
+    res.status(200).json(postsWithStats);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error fetching following feed: ' + error.message });
   }
 };
 
