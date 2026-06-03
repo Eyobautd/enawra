@@ -6,7 +6,8 @@ const app = ex();
 
 connectDB();
 app.use(cors());
-app.use(ex.json());
+app.use(ex.json({ limit: '10mb' }));
+app.use(ex.urlencoded({ limit: '10mb', extended: true }));
 
 const authRoutes = require('./routes/authRoutes');
 const postRoutes = require('./routes/postRoutes');
