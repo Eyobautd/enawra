@@ -3,9 +3,12 @@ import { useAuth } from "../context/AuthContext";
 import { api } from "../services/api";
 import ProfileCard from "../components/ProfileCard";
 import PostCard from "../components/PostCard";
+import { toast } from "sonner";
+import imageCompression from "browser-image-compression";
 
 export default function Profile() {
   const { user, updateUser } = useAuth();
+  
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -24,12 +27,14 @@ export default function Profile() {
     }
   }, [user]);
 
-  const fetchUserPosts = async () => {
-    if (!user?.id && !user?._id) return;
-    const userId = user._id || user.id;
+  const loadProfile = async () => {
+    if (!user) return;
+    setLoading(true);
+    setError("");
     try {
-      const data = await api.posts.getUserPosts(userId);
-      setPosts(data);
+      const userId = user._id || user.id;
+      const postsData = await api.posts.getUserPosts(userId);
+      setPosts(postsData);
     } catch (err) {
       console.error(err);
       setError("Failed to load your posts");
@@ -39,15 +44,44 @@ export default function Profile() {
   };
 
   useEffect(() => {
-    fetchUserPosts();
+    loadProfile();
   }, [user]);
 
   const handlePostDeleted = (postId) => {
     setPosts((prevPosts) => prevPosts.filter((p) => p._id !== postId));
   };
 
+  const handleImageSelect = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    try {
+      const options = {
+        maxSizeMB: 1, // Max 1MB
+        maxWidthOrHeight: 1024,
+        useWebWorker: true
+      };
+      
+      const compressedFile = await imageCompression(file, options);
+      
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfilePhoto(reader.result);
+      };
+      reader.readAsDataURL(compressedFile);
+    } catch (error) {
+      console.error("Error compressing image:", error);
+      toast.error("Failed to process image");
+    }
+  };
+
   const handleSaveProfile = async () => {
-    if (!fullName.trim()) return alert("Full Name cannot be empty");
+    if (!fullName.trim()) return toast.error("Full Name cannot be empty");
     
     setSaving(true);
     try {
@@ -59,9 +93,10 @@ export default function Profile() {
       // Update global context state
       updateUser(updatedData);
       setShowEditModal(false);
+      toast.success("Profile updated successfully");
     } catch (err) {
       console.error("Failed to update profile:", err);
-      alert(err.message || "Failed to update profile");
+      toast.error(err.message || "Failed to update profile");
     } finally {
       setSaving(false);
     }
@@ -112,6 +147,7 @@ export default function Profile() {
                 key={post._id}
                 post={post}
                 onDelete={handlePostDeleted}
+                showDeleteButton={true}
               />
             ))}
           </div>
@@ -139,15 +175,23 @@ export default function Profile() {
 
               <div>
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">
-                  Profile Photo URL
+                  Profile Photo
                 </label>
-                <input
-                  type="text"
-                  value={profilePhoto}
-                  onChange={(e) => setProfilePhoto(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black bg-white text-black"
-                  placeholder="Paste image URL here..."
-                />
+                <div className="flex items-center gap-4">
+                  {profilePhoto && (
+                    <img 
+                      src={profilePhoto} 
+                      alt="Preview" 
+                      className="w-12 h-12 rounded-full object-cover border border-gray-200"
+                    />
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageSelect}
+                    className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100 transition"
+                  />
+                </div>
               </div>
             </div>
 

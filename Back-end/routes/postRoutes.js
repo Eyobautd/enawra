@@ -5,6 +5,7 @@ const { protect } = require('../middleware/authMiddleware');
 
 router.post('/', protect, postController.createPost);
 router.get('/', protect, postController.getFeed);
+router.get('/following', protect, postController.getFollowingFeed);
 router.get('/user/:userId', protect, postController.getUserPosts);
 router.put('/:id', protect, postController.updatePost);
 router.delete('/:id', protect, postController.deletePost);

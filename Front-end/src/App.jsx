@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import NavBar from "./components/NavBar";
 import Home from "./pages/Home";
 import Profile from "./pages/Profile";
+import OtherProfile from "./pages/OtherProfile";
 import Notifications from "./pages/Notifications";
 import Explore from "./pages/Explore";
 import Create from "./pages/Create";
@@ -12,13 +13,16 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ProtectedRoute from "./components/ProtectedRoute";
 
+import { Toaster } from "sonner";
+
 function AppContent() {
   const { user } = useAuth();
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 text-black">
+      <Toaster position="top-right" richColors />
       {user && <NavBar />}
-      <div className="flex-1 flex">
+      <div className={`flex-1 flex ${user ? 'pt-[64px]' : ''}`}>
         {user && <SideBar />}
         <div className="flex-1">
           <Routes>
@@ -29,6 +33,7 @@ function AppContent() {
             {/* Protected Routes */}
             <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/profile/:username" element={<ProtectedRoute><OtherProfile /></ProtectedRoute>} />
             <Route path="/create" element={<ProtectedRoute><Create /></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
             <Route path="/explore" element={<ProtectedRoute><Explore /></ProtectedRoute>} />

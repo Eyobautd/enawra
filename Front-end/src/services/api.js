@@ -49,6 +49,12 @@ export const api = {
       });
       return handleResponse(res);
     },
+    getFollowingFeed: async () => {
+      const res = await fetch(`${BASE_URL}/posts/following`, {
+        headers: getHeaders(),
+      });
+      return handleResponse(res);
+    },
     getUserPosts: async (userId) => {
       const res = await fetch(`${BASE_URL}/posts/user/${userId}`, {
         headers: getHeaders(),
@@ -133,6 +139,12 @@ export const api = {
     },
     getUser: async (userId) => {
       const res = await fetch(`${BASE_URL}/users/${userId}`, {
+        headers: getHeaders(),
+      });
+      return handleResponse(res);
+    },
+    getUserByUsername: async (username) => {
+      const res = await fetch(`${BASE_URL}/users/username/${username}`, {
         headers: getHeaders(),
       });
       return handleResponse(res);

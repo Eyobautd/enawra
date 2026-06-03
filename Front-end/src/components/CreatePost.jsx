@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { api } from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import { toast } from "sonner";
+import imageCompression from "browser-image-compression";
 
 export default function CreatePost({ onPost, onPostCreated }) {
   const [text, setText] = useState("");
@@ -10,20 +12,34 @@ export default function CreatePost({ onPost, onPostCreated }) {
   
   const defaultAvatar = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRDR8H0rgV-zmSodkT_erGjzA_VhfWE22Pg7Q&s";
 
-  const handleImageSelect = (e) => {
+  const handleImageSelect = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
+      toast.error('Please select an image file');
       return;
     }
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setImage(reader.result);
-    };
-    reader.readAsDataURL(file);
+    try {
+      // Compress the image before reading to base64
+      const options = {
+        maxSizeMB: 1, // Max 1MB
+        maxWidthOrHeight: 1920,
+        useWebWorker: true
+      };
+      
+      const compressedFile = await imageCompression(file, options);
+      
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImage(reader.result);
+      };
+      reader.readAsDataURL(compressedFile);
+    } catch (error) {
+      console.error("Error compressing image:", error);
+      toast.error("Failed to process image");
+    }
   };
 
   const handleRemoveImage = () => {
@@ -52,7 +68,7 @@ export default function CreatePost({ onPost, onPostCreated }) {
       setImage(null);
     } catch (err) {
       console.error("Failed to create post:", err);
-      alert(err.message || "Failed to create post");
+      toast.error(err.message || "Failed to create post");
     } finally {
       setLoading(false);
     }
