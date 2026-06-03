@@ -15,7 +15,7 @@ export default function Sidebar({ onCreatePostClick }) {
     }`;
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 p-4 hidden md:block">
+    <aside className="w-64 bg-white border-r border-gray-200 p-4 hidden md:block sticky top-[64px] h-[calc(100vh-64px)] overflow-y-auto">
       <ul className="space-y-3">
         {links.map((link, i) => (
           <li key={i}>
