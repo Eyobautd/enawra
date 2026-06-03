@@ -126,7 +126,7 @@ export default function CreatePost({ onPost, onPostCreated }) {
             />
             <div className="flex items-center gap-1.5 px-3.5 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-150 rounded-xl transition shadow-sm">
               <img
-                src="https://cdn-icons-png.flaticon.com/128/3143/3143615.png"
+                src="https://cdn-icons-png.flaticon.com/128/739/739249.png"
                 alt="Upload Photo"
                 className="w-[18px] h-[18px]"
               />
