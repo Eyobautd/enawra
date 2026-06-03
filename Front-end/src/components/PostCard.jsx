@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { api } from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import { toast } from "sonner";
 
-export default function PostCard({ post, onDelete }) {
+export default function PostCard({ post, onDelete, showDeleteButton = false }) {
   const { user: currentUser } = useAuth();
   
   const [likesCount, setLikesCount] = useState(post.likesCount || 0);
@@ -13,6 +15,8 @@ export default function PostCard({ post, onDelete }) {
   const [showComments, setShowComments] = useState(false);
   const [loadingComments, setLoadingComments] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showLightbox, setShowLightbox] = useState(false);
 
   const defaultAvatar = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRDR8H0rgV-zmSodkT_erGjzA_VhfWE22Pg7Q&s";
   
@@ -79,18 +83,22 @@ export default function PostCard({ post, onDelete }) {
     }
   };
 
-  const handleDelete = async () => {
-    if (!window.confirm("Are you sure you want to delete this post?")) return;
-    
+  const handleDeleteClick = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    setShowDeleteConfirm(false);
     setDeleting(true);
     try {
       await api.posts.deletePost(post._id);
+      toast.success("Post deleted successfully");
       if (onDelete) {
         onDelete(post._id);
       }
     } catch (err) {
       console.error("Error deleting post:", err);
-      alert(err.message || "Failed to delete post");
+      toast.error(err.message || "Failed to delete post");
     } finally {
       setDeleting(false);
     }
@@ -100,21 +108,21 @@ export default function PostCard({ post, onDelete }) {
     <div className="bg-white rounded-xl p-5 mb-6 border border-gray-100 max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl mx-auto shadow-sm transition hover:shadow-md duration-200">
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
+        <Link to={`/profile/${post.author?.username || ''}`} className="flex items-center gap-3 hover:opacity-80 transition group">
           <img
             src={authorAvatar}
             alt={authorName}
-            className="w-11 h-11 rounded-full object-cover border border-gray-100 shadow-sm"
+            className="w-11 h-11 rounded-full object-cover border border-gray-100 shadow-sm group-hover:border-gray-300"
           />
           <div>
-            <h2 className="font-semibold text-gray-900 leading-tight">{authorName}</h2>
+            <h2 className="font-semibold text-gray-900 leading-tight group-hover:text-blue-600 transition">{authorName}</h2>
             <p className="text-xs text-gray-500 font-medium mt-0.5">{authorHandle} • {time}</p>
           </div>
-        </div>
+        </Link>
 
-        {isOwnPost && (
+        {isOwnPost && showDeleteButton && (
           <button
-            onClick={handleDelete}
+            onClick={handleDeleteClick}
             disabled={deleting}
             className="text-xs font-semibold text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition disabled:opacity-50 cursor-pointer"
           >
@@ -128,11 +136,14 @@ export default function PostCard({ post, onDelete }) {
 
       {/* Media Image */}
       {post.mediaUrl && post.mediaType === 'image' && (
-        <div className="mt-4 overflow-hidden rounded-xl border border-gray-100 max-h-96">
+        <div 
+          className="mt-4 overflow-hidden rounded-xl border border-gray-100 max-h-96 cursor-pointer bg-gray-50 flex items-center justify-center"
+          onClick={() => setShowLightbox(true)}
+        >
           <img
             src={post.mediaUrl}
             alt="Post media"
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain max-h-96 hover:opacity-95 transition"
           />
         </div>
       )}
@@ -168,24 +179,27 @@ export default function PostCard({ post, onDelete }) {
             {/* Left side: Post details */}
             <div className="w-full md:w-1/2 border-r border-gray-100 p-5 flex flex-col justify-between bg-gray-50/50">
               <div>
-                <div className="flex items-center gap-3 mb-4">
+                <Link to={`/profile/${post.author?.username || ''}`} className="flex items-center gap-3 mb-4 hover:opacity-80 transition group">
                   <img
                     src={authorAvatar}
                     alt={authorName}
-                    className="w-10 h-10 rounded-full object-cover border border-gray-200"
+                    className="w-10 h-10 rounded-full object-cover border border-gray-200 group-hover:border-gray-300"
                   />
                   <div>
-                    <h4 className="font-semibold text-gray-900">{authorName}</h4>
+                    <h4 className="font-semibold text-gray-900 group-hover:text-blue-600 transition">{authorName}</h4>
                     <p className="text-xs text-gray-500">{authorHandle}</p>
                   </div>
-                </div>
+                </Link>
                 <p className="text-gray-800 text-[15px] leading-relaxed whitespace-pre-line overflow-y-auto max-h-[40vh]">{content}</p>
                 {post.mediaUrl && post.mediaType === 'image' && (
-                  <div className="mt-3 overflow-hidden rounded-xl border border-gray-200 max-h-[30vh]">
+                  <div 
+                    className="mt-3 overflow-hidden rounded-xl border border-gray-200 max-h-[30vh] cursor-pointer bg-gray-100 flex items-center justify-center"
+                    onClick={() => setShowLightbox(true)}
+                  >
                     <img
                       src={post.mediaUrl}
                       alt="Post media"
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain hover:opacity-95 transition"
                     />
                   </div>
                 )}
@@ -214,16 +228,18 @@ export default function PostCard({ post, onDelete }) {
                 ) : (
                   comments.map((c) => (
                     <div key={c._id} className="flex gap-2.5 items-start">
-                      <img
-                        src={c.user?.profilePhoto || defaultAvatar}
-                        alt={c.user?.fullName}
-                        className="w-7 h-7 rounded-full border border-gray-100 object-cover"
-                      />
+                      <Link to={`/profile/${c.user?.username || ''}`}>
+                        <img
+                          src={c.user?.profilePhoto || defaultAvatar}
+                          alt={c.user?.fullName}
+                          className="w-7 h-7 rounded-full border border-gray-100 object-cover hover:opacity-80 transition"
+                        />
+                      </Link>
                       <div className="bg-gray-50 rounded-2xl px-3 py-2 flex-1">
                         <div className="flex items-center justify-between">
-                          <span className="font-semibold text-xs text-gray-800">
+                          <Link to={`/profile/${c.user?.username || ''}`} className="font-semibold text-xs text-gray-800 hover:text-blue-600 transition">
                             {c.user?.fullName || c.user?.username || "Anonymous"}
-                          </span>
+                          </Link>
                           <span className="text-[10px] text-gray-400">
                             {c.createdAt ? new Date(c.createdAt).toLocaleDateString() : ""}
                           </span>
@@ -262,6 +278,48 @@ export default function PostCard({ post, onDelete }) {
             >
               ✕
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Lightbox Overlay */}
+      {showLightbox && post.mediaUrl && (
+        <div className="fixed inset-0 bg-black/90 flex justify-center items-center z-[60] p-4 backdrop-blur-sm" onClick={() => setShowLightbox(false)}>
+          <button
+            onClick={() => setShowLightbox(false)}
+            className="absolute top-4 right-4 h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold text-lg cursor-pointer transition z-[70]"
+          >
+            ✕
+          </button>
+          <img
+            src={post.mediaUrl}
+            alt="Full size media"
+            className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-[60] p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl border border-gray-100">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Delete Post?</h3>
+            <p className="text-gray-600 text-sm mb-6">Are you sure you want to delete this post? This action cannot be undone.</p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="px-4 py-2 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-100 transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 rounded-xl text-sm font-semibold bg-red-500 hover:bg-red-600 text-white shadow-sm transition cursor-pointer"
+              >
+                Delete
+              </button>
+            </div>
           </div>
         </div>
       )}
