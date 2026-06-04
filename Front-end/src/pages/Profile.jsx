@@ -3,6 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import { api } from "../services/api";
 import ProfileCard from "../components/ProfileCard";
 import PostCard from "../components/PostCard";
+import UserListModal from "../components/UserListModal";
 import { toast } from "sonner";
 import imageCompression from "browser-image-compression";
 
@@ -12,10 +13,15 @@ export default function Profile() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  
+  // Follow Modal States
+  const [modalType, setModalType] = useState(null); // 'followers' or 'following'
 
   // Edit Profile States
   const [showEditModal, setShowEditModal] = useState(false);
   const [fullName, setFullName] = useState(user?.fullName || "");
+  const [usernameInput, setUsernameInput] = useState(user?.username || "");
+  const [passwordInput, setPasswordInput] = useState("");
   const [profilePhoto, setProfilePhoto] = useState(user?.profilePhoto || "");
   const [saving, setSaving] = useState(false);
 
@@ -23,6 +29,7 @@ export default function Profile() {
   useEffect(() => {
     if (user) {
       setFullName(user.fullName || "");
+      setUsernameInput(user.username || "");
       setProfilePhoto(user.profilePhoto || "");
     }
   }, [user]);
@@ -82,17 +89,26 @@ export default function Profile() {
 
   const handleSaveProfile = async () => {
     if (!fullName.trim()) return toast.error("Full Name cannot be empty");
+    if (!usernameInput.trim()) return toast.error("Username cannot be empty");
     
     setSaving(true);
     try {
-      const updatedData = await api.users.updateProfile({
+      const payload = {
         fullName,
+        username: usernameInput,
         profilePhoto
-      });
+      };
+      
+      if (passwordInput) {
+        payload.password = passwordInput;
+      }
+      
+      const updatedData = await api.users.updateProfile(payload);
       
       // Update global context state
       updateUser(updatedData);
       setShowEditModal(false);
+      setPasswordInput(""); // Clear password field after save
       toast.success("Profile updated successfully");
     } catch (err) {
       console.error("Failed to update profile:", err);
@@ -114,6 +130,8 @@ export default function Profile() {
         postsCount={posts.length}
         followersCount={user.followers?.length || 0}
         followingCount={user.following?.length || 0}
+        onFollowersClick={() => setModalType('followers')}
+        onFollowingClick={() => setModalType('following')}
       />
 
       <div className="mt-4 flex justify-end">
@@ -175,6 +193,31 @@ export default function Profile() {
 
               <div>
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">
+                  Username
+                </label>
+                <input
+                  type="text"
+                  value={usernameInput}
+                  onChange={(e) => setUsernameInput(e.target.value)}
+                  className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black bg-white text-black"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">
+                  New Password <span className="text-gray-300 font-normal">(Leave blank to keep current)</span>
+                </label>
+                <input
+                  type="password"
+                  value={passwordInput}
+                  onChange={(e) => setPasswordInput(e.target.value)}
+                  className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black bg-white text-black"
+                  placeholder="••••••••"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">
                   Profile Photo
                 </label>
                 <div className="flex items-center gap-4">
@@ -212,6 +255,16 @@ export default function Profile() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Followers / Following Modal */}
+      {modalType && (
+        <UserListModal
+          title={modalType === 'followers' ? 'Followers' : 'Following'}
+          userId={user._id || user.id}
+          type={modalType}
+          onClose={() => setModalType(null)}
+        />
       )}
     </div>
   );

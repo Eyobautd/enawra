@@ -162,6 +162,18 @@ export const api = {
       });
       return handleResponse(res);
     },
+    getFollowers: async (userId) => {
+      const res = await fetch(`${BASE_URL}/users/${userId}/followers`, {
+        headers: getHeaders(),
+      });
+      return handleResponse(res);
+    },
+    getFollowing: async (userId) => {
+      const res = await fetch(`${BASE_URL}/users/${userId}/following`, {
+        headers: getHeaders(),
+      });
+      return handleResponse(res);
+    },
     updateProfile: async (data) => {
       const res = await fetch(`${BASE_URL}/users/profile`, {
         method: 'PUT',

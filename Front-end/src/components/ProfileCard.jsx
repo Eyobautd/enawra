@@ -5,7 +5,9 @@ export default function ProfileCard({
   avatar, 
   postsCount = 0, 
   followersCount = 0, 
-  followingCount = 0 
+  followingCount = 0,
+  onFollowersClick,
+  onFollowingClick
 }) {
   const defaultAvatar = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRDR8H0rgV-zmSodkT_erGjzA_VhfWE22Pg7Q&s";
 
@@ -32,12 +34,18 @@ export default function ProfileCard({
               <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mt-1 block">Posts</span>
             </div>
             
-            <div className="text-center sm:text-left">
+            <div 
+              className={`text-center sm:text-left ${onFollowersClick ? 'cursor-pointer hover:opacity-70 transition' : ''}`}
+              onClick={onFollowersClick}
+            >
               <span className="block text-lg font-bold text-gray-900 leading-none">{followersCount}</span>
               <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mt-1 block">Followers</span>
             </div>
 
-            <div className="text-center sm:text-left">
+            <div 
+              className={`text-center sm:text-left ${onFollowingClick ? 'cursor-pointer hover:opacity-70 transition' : ''}`}
+              onClick={onFollowingClick}
+            >
               <span className="block text-lg font-bold text-gray-900 leading-none">{followingCount}</span>
               <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mt-1 block">Following</span>
             </div>

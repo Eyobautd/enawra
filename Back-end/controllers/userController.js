@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const bcrypt = require('bcryptjs');
 
 // Get current user profile
 exports.getMe = async (req, res) => {
@@ -113,11 +114,24 @@ exports.toggleFollow = async (req, res) => {
 // Update profile
 exports.updateProfile = async (req, res) => {
   try {
-    const { fullName, profilePhoto } = req.body;
+    const { fullName, profilePhoto, username, password } = req.body;
     const user = await User.findById(req.user.id);
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (username && username !== user.username) {
+      const usernameExists = await User.findOne({ username });
+      if (usernameExists) {
+        return res.status(400).json({ message: 'Username is already taken' });
+      }
+      user.username = username;
+    }
+
+    if (password) {
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(password, salt);
     }
 
     if (fullName) user.fullName = fullName;
@@ -129,5 +143,31 @@ exports.updateProfile = async (req, res) => {
     res.status(200).json(updatedUser);
   } catch (error) {
     res.status(500).json({ message: 'Server error updating profile: ' + error.message });
+  }
+};
+
+// Get followers for a user
+exports.getFollowers = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).populate('followers', 'fullName username profilePhoto');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.status(200).json(user.followers);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error fetching followers: ' + error.message });
+  }
+};
+
+// Get following for a user
+exports.getFollowing = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).populate('following', 'fullName username profilePhoto');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.status(200).json(user.following);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error fetching following: ' + error.message });
   }
 };
