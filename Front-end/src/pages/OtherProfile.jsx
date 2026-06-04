@@ -4,6 +4,7 @@ import { api } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import ProfileCard from "../components/ProfileCard";
 import PostCard from "../components/PostCard";
+import UserListModal from "../components/UserListModal";
 import { toast } from "sonner";
 
 export default function OtherProfile() {
@@ -17,6 +18,7 @@ export default function OtherProfile() {
   const [error, setError] = useState("");
   const [isFollowing, setIsFollowing] = useState(false);
   const [togglingFollow, setTogglingFollow] = useState(false);
+  const [modalType, setModalType] = useState(null); // 'followers' or 'following'
 
   useEffect(() => {
     // If they click on their own username, redirect to their own profile page
@@ -99,6 +101,8 @@ export default function OtherProfile() {
         postsCount={posts.length}
         followersCount={profileUser.followers?.length || 0}
         followingCount={profileUser.following?.length || 0}
+        onFollowersClick={() => setModalType('followers')}
+        onFollowingClick={() => setModalType('following')}
       />
 
       {currentUser && (
@@ -137,6 +141,16 @@ export default function OtherProfile() {
           </div>
         )}
       </div>
+
+      {/* Followers / Following Modal */}
+      {modalType && profileUser && (
+        <UserListModal
+          title={modalType === 'followers' ? 'Followers' : 'Following'}
+          userId={profileUser._id}
+          type={modalType}
+          onClose={() => setModalType(null)}
+        />
+      )}
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { api } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 
@@ -63,17 +64,17 @@ export default function RightSidebar() {
 
             return (
               <li key={c._id} className="flex justify-between items-center gap-3">
-                <div className="flex items-center gap-2.5">
+                <Link to={`/profile/${c.username}`} className="flex items-center gap-2.5 hover:opacity-80 transition group flex-1 min-w-0">
                   <img
                     src={c.profilePhoto || defaultAvatar}
                     alt={c.fullName}
-                    className="w-9 h-9 rounded-full object-cover border border-gray-150"
+                    className="w-9 h-9 rounded-full object-cover border border-gray-150 group-hover:border-gray-300"
                   />
                   <div className="max-w-[110px]">
-                    <p className="font-semibold text-xs text-gray-950 truncate leading-none">{c.fullName}</p>
+                    <p className="font-semibold text-xs text-gray-950 truncate leading-none group-hover:text-blue-600 transition">{c.fullName}</p>
                     <p className="text-[10px] text-gray-400 truncate mt-1">@{c.username}</p>
                   </div>
-                </div>
+                </Link>
                 
                 <button 
                   onClick={() => handleFollowToggle(c._id)}
