@@ -5,7 +5,9 @@ export default function Create({ onPost }) {
   const navigate = useNavigate();
 
   const handleNewPost = (post) => {
-    onPost(post);
+    if (onPost) {
+      onPost(post);
+    }
     // Redirect to home after posting
     navigate("/");
   };
