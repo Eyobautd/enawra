@@ -15,13 +15,13 @@ function MobileNav() {
         <img src="https://cdn-icons-png.flaticon.com/128/565/565504.png" alt="Explore" className="w-5 h-5" />
       </NavLink>
       <NavLink to="/create" className={navClass}>
-        <img src="https://cdn-icons-png.flaticon.com/128/1665/1665753.png" alt="Create" className="w-5 h-5" />
+        <img src="https://cdn-icons-png.flaticon.com/128/4074/4074945.png" alt="Create" className="w-5 h-5" />
       </NavLink>
       <NavLink to="/notifications" className={navClass}>
-        <img src="https://cdn-icons-png.flaticon.com/128/1946/1946436.png" alt="Notifications" className="w-5 h-5" />
+        <img src="https://cdn-icons-png.flaticon.com/128/3602/3602123.png" alt="Notifications" className="w-5 h-5" />
       </NavLink>
       <NavLink to="/profile" className={navClass}>
-        <img src="https://cdn-icons-png.flaticon.com/128/565/565504.png" alt="Profile" className="w-5 h-5" />
+        <img src="https://cdn-icons-png.flaticon.com/128/18706/18706280.png" alt="Profile" className="w-5 h-5" />
       </NavLink>
     </nav>
   );

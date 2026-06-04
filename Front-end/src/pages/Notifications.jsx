@@ -70,12 +70,12 @@ export default function Notifications() {
                 {/* Action Icon Indicator */}
                 <div className="flex-shrink-0">
                   {n.type === "like" ? (
-                    <div className="h-8 w-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-sm shadow-sm font-bold">
-                      ❤️
+                    <div className="h-9 w-9 rounded-full bg-white border border-gray-300  flex items-center justify-center text-sm shadow-sm font-bold">
+                      <img src="https://cdn-icons-png.flaticon.com/128/3916/3916769.png" alt="Like" className="w-5 h-5" />
                     </div>
                   ) : (
-                    <div className="h-8 w-8 rounded-full bg-green-50 text-green-600 flex items-center justify-center text-sm shadow-sm font-bold">
-                      💬
+                    <div className="h-9 w-9 rounded-full bg-white border border-gray-300  flex items-center justify-center text-sm shadow-sm font-bold">
+                      <img src="https://cdn-icons-png.flaticon.com/128/9291/9291723.png" alt="Comment" className="w-5 h-5" />
                     </div>
                   )}
                 </div>
