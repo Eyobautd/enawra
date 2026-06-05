@@ -101,6 +101,7 @@ export default function Profile() {
     if (passwordInput || confirmPasswordInput || oldPasswordInput) {
       if (!oldPasswordInput) return toast.error("Please enter your current password.");
       if (!passwordInput) return toast.error("Please enter a new password.");
+      if (passwordInput.length < 8) return toast.error("New password must be at least 8 characters long.");
       if (passwordInput !== confirmPasswordInput) return toast.error("New passwords do not match.");
     }
     
@@ -238,6 +239,7 @@ export default function Profile() {
                 </label>
                 <input
                   type="password"
+                  minLength={8}
                   value={passwordInput}
                   onChange={(e) => setPasswordInput(e.target.value)}
                   className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black bg-white text-black"

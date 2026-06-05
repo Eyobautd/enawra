@@ -26,6 +26,10 @@ export default function Register() {
       return setError("All fields except profile photo are required");
     }
 
+    if (password.length < 8) {
+      return setError("Password must be at least 8 characters long");
+    }
+
     setError("");
     setLoading(true);
     try {
@@ -169,6 +173,7 @@ export default function Register() {
                   name="password"
                   type="password"
                   required
+                  minLength={8}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="appearance-none block w-full px-3 py-2.5 border border-gray-300 rounded-xl placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black sm:text-sm text-black bg-white"
