@@ -5,7 +5,9 @@ const connectDB = require('./config/db');
 const app = ex();
 
 connectDB();
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:5173'
+}));
 app.use(ex.json({ limit: '10mb' }));
 app.use(ex.urlencoded({ limit: '10mb', extended: true }));
 
