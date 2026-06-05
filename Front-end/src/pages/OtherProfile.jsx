@@ -9,7 +9,7 @@ import { toast } from "sonner";
 
 export default function OtherProfile() {
   const { username } = useParams();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, updateUser } = useAuth();
   const navigate = useNavigate();
   
   const [profileUser, setProfileUser] = useState(null);
@@ -63,12 +63,17 @@ export default function OtherProfile() {
       const result = await api.users.toggleFollow(profileUser._id);
       setIsFollowing(result.isFollowing);
       
+      if (result.following) {
+        updateUser({ following: result.following });
+      }
+      
       // Update local profile user's followers count for immediate UI feedback
+      const currentUserId = currentUser._id || currentUser.id;
       setProfileUser(prev => ({
         ...prev,
         followers: result.isFollowing 
-          ? [...(prev.followers || []), currentUser._id]
-          : (prev.followers || []).filter(id => id !== currentUser._id)
+          ? [...(prev.followers || []), currentUserId]
+          : (prev.followers || []).filter(id => id && id.toString() !== currentUserId.toString())
       }));
       
       toast.success(result.message);

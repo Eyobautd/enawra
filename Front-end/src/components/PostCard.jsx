@@ -155,7 +155,7 @@ export default function PostCard({ post, onDelete, showDeleteButton = false }) {
           className={`flex items-center gap-1.5 hover:text-blue-600 transition cursor-pointer font-medium text-sm ${liked ? "text-blue-600 font-semibold" : ""}`}
         >
           <img 
-            src={liked ? "https://cdn-icons-png.flaticon.com/128/1077/1077035.png" : "https://cdn-icons-png.flaticon.com/128/1077/1077086.png"} 
+            src={liked ? "https://cdn-icons-png.flaticon.com/128/1077/1077086.png" : "https://cdn-icons-png.flaticon.com/128/1077/1077035.png"} 
             alt="Like" 
             className="w-[18px] h-[18px]" 
           />

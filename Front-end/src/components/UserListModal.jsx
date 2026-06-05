@@ -4,7 +4,7 @@ import { api } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 
 export default function UserListModal({ title, userId, type, onClose }) {
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, updateUser } = useAuth();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -46,6 +46,11 @@ export default function UserListModal({ title, userId, type, onClose }) {
     e.stopPropagation();
     try {
       const data = await api.users.toggleFollow(targetUserId);
+      
+      if (data.following) {
+        updateUser({ following: data.following });
+      }
+
       setUsers((prevUsers) =>
         prevUsers.map((u) => {
           if (u._id === targetUserId) {

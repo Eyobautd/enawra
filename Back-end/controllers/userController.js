@@ -104,7 +104,8 @@ exports.toggleFollow = async (req, res) => {
       message: isFollowing ? 'Unfollowed successfully' : 'Followed successfully',
       isFollowing: !isFollowing,
       followersCount: targetUser.followers.length,
-      followingCount: currentUser.following.length
+      followingCount: currentUser.following.length,
+      following: currentUser.following
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error toggling follow status: ' + error.message });
@@ -114,7 +115,7 @@ exports.toggleFollow = async (req, res) => {
 // Update profile
 exports.updateProfile = async (req, res) => {
   try {
-    const { fullName, profilePhoto, username, password } = req.body;
+    const { fullName, profilePhoto, username, password, oldPassword } = req.body;
     const user = await User.findById(req.user.id);
 
     if (!user) {
@@ -130,6 +131,15 @@ exports.updateProfile = async (req, res) => {
     }
 
     if (password) {
+      if (!oldPassword) {
+        return res.status(400).json({ message: 'Please provide your current password to set a new one.' });
+      }
+
+      const isMatch = await bcrypt.compare(oldPassword, user.password);
+      if (!isMatch) {
+        return res.status(400).json({ message: 'Incorrect current password.' });
+      }
+
       const salt = await bcrypt.genSalt(10);
       user.password = await bcrypt.hash(password, salt);
     }

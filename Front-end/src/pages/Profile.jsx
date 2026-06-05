@@ -21,7 +21,9 @@ export default function Profile() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [fullName, setFullName] = useState(user?.fullName || "");
   const [usernameInput, setUsernameInput] = useState(user?.username || "");
+  const [oldPasswordInput, setOldPasswordInput] = useState("");
   const [passwordInput, setPasswordInput] = useState("");
+  const [confirmPasswordInput, setConfirmPasswordInput] = useState("");
   const [profilePhoto, setProfilePhoto] = useState(user?.profilePhoto || "");
   const [saving, setSaving] = useState(false);
 
@@ -49,6 +51,11 @@ export default function Profile() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    // Refresh user data once on mount to get latest stats
+    api.users.getMe().then(updateUser).catch(console.error);
+  }, []);
 
   useEffect(() => {
     loadProfile();
@@ -91,6 +98,12 @@ export default function Profile() {
     if (!fullName.trim()) return toast.error("Full Name cannot be empty");
     if (!usernameInput.trim()) return toast.error("Username cannot be empty");
     
+    if (passwordInput || confirmPasswordInput || oldPasswordInput) {
+      if (!oldPasswordInput) return toast.error("Please enter your current password.");
+      if (!passwordInput) return toast.error("Please enter a new password.");
+      if (passwordInput !== confirmPasswordInput) return toast.error("New passwords do not match.");
+    }
+    
     setSaving(true);
     try {
       const payload = {
@@ -101,6 +114,7 @@ export default function Profile() {
       
       if (passwordInput) {
         payload.password = passwordInput;
+        payload.oldPassword = oldPasswordInput;
       }
       
       const updatedData = await api.users.updateProfile(payload);
@@ -108,7 +122,9 @@ export default function Profile() {
       // Update global context state
       updateUser(updatedData);
       setShowEditModal(false);
-      setPasswordInput(""); // Clear password field after save
+      setOldPasswordInput("");
+      setPasswordInput("");
+      setConfirmPasswordInput("");
       toast.success("Profile updated successfully");
     } catch (err) {
       console.error("Failed to update profile:", err);
@@ -205,12 +221,38 @@ export default function Profile() {
 
               <div>
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">
-                  New Password <span className="text-gray-300 font-normal">(Leave blank to keep current)</span>
+                  Current Password <span className="text-gray-300 font-normal">(Required if changing password)</span>
+                </label>
+                <input
+                  type="password"
+                  value={oldPasswordInput}
+                  onChange={(e) => setOldPasswordInput(e.target.value)}
+                  className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black bg-white text-black"
+                  placeholder="••••••••"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">
+                  New Password
                 </label>
                 <input
                   type="password"
                   value={passwordInput}
                   onChange={(e) => setPasswordInput(e.target.value)}
+                  className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black bg-white text-black"
+                  placeholder="••••••••"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">
+                  Confirm New Password
+                </label>
+                <input
+                  type="password"
+                  value={confirmPasswordInput}
+                  onChange={(e) => setConfirmPasswordInput(e.target.value)}
                   className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black bg-white text-black"
                   placeholder="••••••••"
                 />

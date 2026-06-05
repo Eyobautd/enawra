@@ -4,7 +4,7 @@ import { api } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 
 export default function RightSidebar() {
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, updateUser } = useAuth();
   const [creators, setCreators] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -28,6 +28,10 @@ export default function RightSidebar() {
   const handleFollowToggle = async (creatorId) => {
     try {
       const data = await api.users.toggleFollow(creatorId);
+      
+      if (data.following) {
+        updateUser({ following: data.following });
+      }
       
       setCreators((prevCreators) =>
         prevCreators.map((c) => {

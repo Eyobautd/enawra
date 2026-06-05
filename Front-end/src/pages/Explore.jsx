@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { api } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 
 export default function Explore() {
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, updateUser } = useAuth();
   const [query, setQuery] = useState("");
   const [people, setPeople] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,6 +33,10 @@ export default function Explore() {
   const handleFollowToggle = async (personId) => {
     try {
       const data = await api.users.toggleFollow(personId);
+      
+      if (data.following) {
+        updateUser({ following: data.following });
+      }
       
       setPeople((prevPeople) =>
         prevPeople.map((person) => {
@@ -92,17 +97,17 @@ export default function Explore() {
               return (
                 <div key={person._id} className="rounded-2xl border border-gray-150 bg-white p-5 shadow-sm transition hover:shadow-md duration-200 flex flex-col justify-between">
                   <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
+                    <Link to={`/profile/${person.username}`} className="flex items-center gap-3 hover:opacity-80 transition group flex-1 min-w-0">
                       <img
                         src={person.profilePhoto || defaultAvatar}
                         alt={person.fullName}
-                        className="w-12 h-12 rounded-full object-cover border border-gray-200"
+                        className="w-12 h-12 rounded-full object-cover border border-gray-200 group-hover:border-gray-300"
                       />
-                      <div>
-                        <p className="text-base font-semibold text-gray-950 leading-snug">{person.fullName}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">@{person.username}</p>
+                      <div className="max-w-full overflow-hidden">
+                        <p className="text-base font-semibold text-gray-950 leading-snug group-hover:text-blue-600 transition truncate">{person.fullName}</p>
+                        <p className="text-xs text-gray-400 mt-0.5 truncate">@{person.username}</p>
                       </div>
-                    </div>
+                    </Link>
                     <button 
                       onClick={() => handleFollowToggle(person._id)}
                       className={`rounded-xl border px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
