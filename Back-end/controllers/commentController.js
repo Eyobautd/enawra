@@ -57,6 +57,38 @@ exports.getComments = async (req, res) => {
   }
 };
 
+// Update a comment
+exports.updateComment = async (req, res) => {
+  try {
+    const { text } = req.body;
+    const comment = await Comment.findById(req.params.id);
+
+    if (!comment) {
+      return res.status(404).json({ message: 'Comment not found' });
+    }
+
+    if (comment.user.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Not authorized to edit this comment' });
+    }
+
+    if (!text || !text.trim()) {
+      return res.status(400).json({ message: 'Comment text is required' });
+    }
+
+    comment.text = text;
+    comment.isEdited = true;
+    comment.updatedAt = new Date();
+
+    await comment.save();
+
+    const populatedComment = await Comment.findById(comment._id).populate('user', 'username fullName profilePhoto');
+
+    res.status(200).json(populatedComment);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error updating comment: ' + error.message });
+  }
+};
+
 // Delete a comment
 exports.deleteComment = async (req, res) => {
   try {

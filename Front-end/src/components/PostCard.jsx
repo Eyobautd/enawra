@@ -4,11 +4,12 @@ import { api } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "sonner";
 
-export default function PostCard({ post, onDelete, showDeleteButton = false }) {
+export default function PostCard({ post, onDelete, onUpdate, showDeleteButton = false }) {
   const { user: currentUser } = useAuth();
-  
+
   const [likesCount, setLikesCount] = useState(post.likesCount || 0);
   const [liked, setLiked] = useState(post.liked || false);
+  const [postData, setPostData] = useState(post);
   const [commentsCount, setCommentsCount] = useState(post.commentsCount || 0);
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState("");
@@ -17,20 +18,26 @@ export default function PostCard({ post, onDelete, showDeleteButton = false }) {
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showLightbox, setShowLightbox] = useState(false);
+  const [isEditingPost, setIsEditingPost] = useState(false);
+  const [editPostText, setEditPostText] = useState(post.text || "");
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editingCommentText, setEditingCommentText] = useState("");
+  const [updatingCommentId, setUpdatingCommentId] = useState(null);
+  const [deletingCommentId, setDeletingCommentId] = useState(null);
 
   const defaultAvatar = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRDR8H0rgV-zmSodkT_erGjzA_VhfWE22Pg7Q&s";
-  
+
   const authorName = post.author?.fullName || post.author?.username || "Anonymous";
   const authorHandle = post.author?.username ? `@${post.author.username}` : "";
   const authorAvatar = post.author?.profilePhoto || defaultAvatar;
-  const content = post.text;
-  const time = post.createdAt 
-    ? new Date(post.createdAt).toLocaleDateString(undefined, { 
-        month: 'short', 
-        day: 'numeric', 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      }) 
+  const content = postData?.text;
+  const time = postData?.createdAt
+    ? new Date(postData.createdAt).toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
     : "just now";
 
   // Check if current user is the author of this post
@@ -38,9 +45,11 @@ export default function PostCard({ post, onDelete, showDeleteButton = false }) {
 
   // Sync state with post prop
   useEffect(() => {
+    setPostData(post);
     setLikesCount(post.likesCount || 0);
     setLiked(post.liked || false);
     setCommentsCount(post.commentsCount || 0);
+    setEditPostText(post.text || "");
   }, [post]);
 
   // Fetch comments when dialog is opened
@@ -83,6 +92,90 @@ export default function PostCard({ post, onDelete, showDeleteButton = false }) {
     }
   };
 
+  const handlePostEditStart = () => {
+    setIsEditingPost(true);
+  };
+
+  const handlePostCancelEdit = () => {
+    setEditPostText(postData?.text || "");
+    setIsEditingPost(false);
+  };
+
+  const handlePostSave = async () => {
+    if (!editPostText.trim()) {
+      toast.error("Post cannot be empty");
+      return;
+    }
+
+    try {
+      const updatedPost = await api.posts.updatePost(
+        postData._id,
+        editPostText,
+        postData.mediaUrl,
+        postData.mediaType
+      );
+      setPostData(updatedPost);
+      setIsEditingPost(false);
+      toast.success("Post updated successfully");
+      if (onUpdate) {
+        onUpdate(updatedPost);
+      }
+    } catch (err) {
+      console.error("Error updating post:", err);
+      toast.error(err.message || "Failed to update post");
+    }
+  };
+
+  const handleCommentEditStart = (comment) => {
+    setEditingCommentId(comment._id);
+    setEditingCommentText(comment.text || "");
+  };
+
+  const handleCommentEditCancel = () => {
+    setEditingCommentId(null);
+    setEditingCommentText("");
+  };
+
+  const handleCommentUpdate = async (commentId) => {
+    if (!editingCommentText.trim()) {
+      toast.error("Comment cannot be empty");
+      return;
+    }
+
+    setUpdatingCommentId(commentId);
+    try {
+      const updatedComment = await api.comments.updateComment(commentId, editingCommentText);
+      setComments((prev) => prev.map((comment) => (comment._id === commentId ? updatedComment : comment)));
+      setEditingCommentId(null);
+      setEditingCommentText("");
+      toast.success("Comment updated successfully");
+    } catch (err) {
+      console.error("Error updating comment:", err);
+      toast.error(err.message || "Failed to update comment");
+    } finally {
+      setUpdatingCommentId(null);
+    }
+  };
+
+  const handleCommentDelete = async (commentId) => {
+    setDeletingCommentId(commentId);
+    try {
+      await api.comments.deleteComment(commentId);
+      setComments((prev) => prev.filter((comment) => comment._id !== commentId));
+      setCommentsCount((prev) => Math.max(prev - 1, 0));
+      if (editingCommentId === commentId) {
+        setEditingCommentId(null);
+        setEditingCommentText("");
+      }
+      toast.success("Comment deleted successfully");
+    } catch (err) {
+      console.error("Error deleting comment:", err);
+      toast.error(err.message || "Failed to delete comment");
+    } finally {
+      setDeletingCommentId(null);
+    }
+  };
+
   const handleDeleteClick = () => {
     setShowDeleteConfirm(true);
   };
@@ -120,28 +213,68 @@ export default function PostCard({ post, onDelete, showDeleteButton = false }) {
           </div>
         </Link>
 
-        {isOwnPost && showDeleteButton && (
-          <button
-            onClick={handleDeleteClick}
-            disabled={deleting}
-            className="text-xs font-semibold text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition disabled:opacity-50 cursor-pointer"
-          >
-            {deleting ? "Deleting..." : "Delete"}
-          </button>
+        {isOwnPost && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handlePostEditStart}
+              className="text-xs font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition"
+            >
+              Edit
+            </button>
+            {showDeleteButton && (
+              <button
+                onClick={handleDeleteClick}
+                disabled={deleting}
+                className="text-xs font-semibold text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition disabled:opacity-50 cursor-pointer"
+              >
+                {deleting ? "Deleting..." : "Delete"}
+              </button>
+            )}
+          </div>
         )}
       </div>
 
       {/* Content */}
-      <p className="text-gray-800 mt-4 leading-relaxed whitespace-pre-line text-[15px]">{content}</p>
+      {isEditingPost ? (
+        <div className="mt-4">
+          <textarea
+            value={editPostText}
+            onChange={(e) => setEditPostText(e.target.value)}
+            rows={4}
+            className="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black bg-white"
+          />
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              onClick={handlePostSave}
+              className="bg-black text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-gray-800 transition"
+            >
+              Save
+            </button>
+            <button
+              onClick={handlePostCancelEdit}
+              className="bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-gray-50 transition"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="mt-4">
+          <p className="text-gray-800 leading-relaxed whitespace-pre-line text-[15px]">{content}</p>
+          {postData.isEdited && (
+            <p className="text-xs text-gray-400 mt-2">Edited</p>
+          )}
+        </div>
+      )}
 
       {/* Media Image */}
-      {post.mediaUrl && post.mediaType === 'image' && (
-        <div 
+      {postData.mediaUrl && postData.mediaType === 'image' && (
+        <div
           className="mt-4 overflow-hidden rounded-xl border border-gray-100 max-h-96 cursor-pointer bg-gray-50 flex items-center justify-center"
           onClick={() => setShowLightbox(true)}
         >
           <img
-            src={post.mediaUrl}
+            src={postData.mediaUrl}
             alt="Post media"
             className="w-full h-full object-contain max-h-96 hover:opacity-95 transition"
           />
@@ -150,18 +283,18 @@ export default function PostCard({ post, onDelete, showDeleteButton = false }) {
 
       {/* Actions */}
       <div className="flex flex-wrap gap-5 mt-5 pt-3 border-t border-gray-50 text-gray-600 items-center">
-        <button 
-          onClick={handleLike} 
+        <button
+          onClick={handleLike}
           className={`flex items-center gap-1.5 hover:text-blue-600 transition cursor-pointer font-medium text-sm ${liked ? "text-blue-600 font-semibold" : ""}`}
         >
-          <img 
-            src={liked ? "https://cdn-icons-png.flaticon.com/128/1077/1077086.png" : "https://cdn-icons-png.flaticon.com/128/1077/1077035.png"} 
-            alt="Like" 
-            className="w-[18px] h-[18px]" 
+          <img
+            src={liked ? "https://cdn-icons-png.flaticon.com/128/1077/1077086.png" : "https://cdn-icons-png.flaticon.com/128/1077/1077035.png"}
+            alt="Like"
+            className="w-[18px] h-[18px]"
           />
           <span>{likesCount}</span>
         </button>
-        
+
         <button
           onClick={() => setShowComments(true)}
           className="flex items-center gap-1.5 hover:text-blue-600 transition cursor-pointer font-medium text-sm"
@@ -175,7 +308,7 @@ export default function PostCard({ post, onDelete, showDeleteButton = false }) {
       {showComments && (
         <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl h-[80vh] flex flex-col md:flex-row overflow-hidden relative">
-            
+
             {/* Left side: Post details */}
             <div className="w-full md:w-1/2 border-r border-gray-100 p-5 flex flex-col justify-between bg-gray-50/50">
               <div>
@@ -191,13 +324,13 @@ export default function PostCard({ post, onDelete, showDeleteButton = false }) {
                   </div>
                 </Link>
                 <p className="text-gray-800 text-[15px] leading-relaxed whitespace-pre-line overflow-y-auto max-h-[40vh]">{content}</p>
-                {post.mediaUrl && post.mediaType === 'image' && (
-                  <div 
+                {postData.mediaUrl && postData.mediaType === 'image' && (
+                  <div
                     className="mt-3 overflow-hidden rounded-xl border border-gray-200 max-h-[30vh] cursor-pointer bg-gray-100 flex items-center justify-center"
                     onClick={() => setShowLightbox(true)}
                   >
                     <img
-                      src={post.mediaUrl}
+                      src={postData.mediaUrl}
                       alt="Post media"
                       className="w-full h-full object-contain hover:opacity-95 transition"
                     />
@@ -214,7 +347,7 @@ export default function PostCard({ post, onDelete, showDeleteButton = false }) {
               <h3 className="text-base font-bold p-4 border-b border-gray-100 text-gray-800">
                 Comments ({comments.length})
               </h3>
-              
+
               {/* Scrollable comments list */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-white">
                 {loadingComments ? (
@@ -226,28 +359,77 @@ export default function PostCard({ post, onDelete, showDeleteButton = false }) {
                     No comments yet. Start the conversation!
                   </div>
                 ) : (
-                  comments.map((c) => (
-                    <div key={c._id} className="flex gap-2.5 items-start">
-                      <Link to={`/profile/${c.user?.username || ''}`}>
-                        <img
-                          src={c.user?.profilePhoto || defaultAvatar}
-                          alt={c.user?.fullName}
-                          className="w-7 h-7 rounded-full border border-gray-100 object-cover hover:opacity-80 transition"
-                        />
-                      </Link>
-                      <div className="bg-gray-50 rounded-2xl px-3 py-2 flex-1">
-                        <div className="flex items-center justify-between">
-                          <Link to={`/profile/${c.user?.username || ''}`} className="font-semibold text-xs text-gray-800 hover:text-blue-600 transition">
-                            {c.user?.fullName || c.user?.username || "Anonymous"}
-                          </Link>
-                          <span className="text-[10px] text-gray-400">
-                            {c.createdAt ? new Date(c.createdAt).toLocaleDateString() : ""}
-                          </span>
+                  comments.map((c) => {
+                    const isOwnComment = currentUser && c.user && (c.user._id === currentUser._id || c.user === currentUser._id);
+                    return (
+                      <div key={c._id} className="flex gap-2.5 items-start">
+                        <Link to={`/profile/${c.user?.username || ''}`}>
+                          <img
+                            src={c.user?.profilePhoto || defaultAvatar}
+                            alt={c.user?.fullName}
+                            className="w-7 h-7 rounded-full border border-gray-100 object-cover hover:opacity-80 transition"
+                          />
+                        </Link>
+                        <div className="bg-gray-50 rounded-2xl px-3 py-2 flex-1">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <Link to={`/profile/${c.user?.username || ''}`} className="font-semibold text-xs text-gray-800 hover:text-blue-600 transition">
+                                {c.user?.fullName || c.user?.username || "Anonymous"}
+                              </Link>
+                              <span className="block text-[10px] text-gray-400 mt-1">
+                                {c.createdAt ? new Date(c.createdAt).toLocaleDateString() : ""}
+                                {c.isEdited ? " • edited" : ""}
+                              </span>
+                            </div>
+                            {isOwnComment && (
+                              <div className="flex gap-2 items-center">
+                                <button
+                                  onClick={() => handleCommentEditStart(c)}
+                                  className="text-[10px] font-semibold text-blue-600 hover:text-blue-800 transition"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  onClick={() => handleCommentDelete(c._id)}
+                                  disabled={deletingCommentId === c._id}
+                                  className="text-[10px] font-semibold text-red-500 hover:text-red-700 transition disabled:opacity-50"
+                                >
+                                  {deletingCommentId === c._id ? "Deleting..." : "Delete"}
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                          {editingCommentId === c._id ? (
+                            <div className="mt-2">
+                              <textarea
+                                value={editingCommentText}
+                                onChange={(e) => setEditingCommentText(e.target.value)}
+                                rows={3}
+                                className="w-full border border-gray-200 rounded-2xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black bg-white"
+                              />
+                              <div className="mt-2 flex gap-2 justify-end">
+                                <button
+                                  onClick={handleCommentEditCancel}
+                                  className="text-xs font-semibold text-gray-600 hover:text-black px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 transition"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  onClick={() => handleCommentUpdate(c._id)}
+                                  disabled={updatingCommentId === c._id}
+                                  className="text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-xl transition disabled:opacity-50"
+                                >
+                                  {updatingCommentId === c._id ? "Saving..." : "Save"}
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-gray-700 text-sm mt-0.5 whitespace-pre-line leading-relaxed">{c.text}</p>
+                          )}
                         </div>
-                        <p className="text-gray-700 text-sm mt-0.5 whitespace-pre-line leading-relaxed">{c.text}</p>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
 
@@ -283,7 +465,7 @@ export default function PostCard({ post, onDelete, showDeleteButton = false }) {
       )}
 
       {/* Lightbox Overlay */}
-      {showLightbox && post.mediaUrl && (
+      {showLightbox && postData.mediaUrl && (
         <div className="fixed inset-0 bg-black/90 flex justify-center items-center z-[60] p-4 backdrop-blur-sm" onClick={() => setShowLightbox(false)}>
           <button
             onClick={() => setShowLightbox(false)}
@@ -292,7 +474,7 @@ export default function PostCard({ post, onDelete, showDeleteButton = false }) {
             ✕
           </button>
           <img
-            src={post.mediaUrl}
+            src={postData.mediaUrl}
             alt="Full size media"
             className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
             onClick={(e) => e.stopPropagation()}

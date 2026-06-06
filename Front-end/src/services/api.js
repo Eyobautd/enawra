@@ -69,6 +69,14 @@ export const api = {
       });
       return handleResponse(res);
     },
+    updatePost: async (postId, text, mediaUrl = null, mediaType = null) => {
+      const res = await fetch(`${BASE_URL}/posts/${postId}`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify({ text, mediaUrl, mediaType }),
+      });
+      return handleResponse(res);
+    },
     deletePost: async (postId) => {
       const res = await fetch(`${BASE_URL}/posts/${postId}`, {
         method: 'DELETE',
@@ -87,6 +95,14 @@ export const api = {
     addComment: async (postId, text) => {
       const res = await fetch(`${BASE_URL}/comments/post/${postId}`, {
         method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ text }),
+      });
+      return handleResponse(res);
+    },
+    updateComment: async (commentId, text) => {
+      const res = await fetch(`${BASE_URL}/comments/${commentId}`, {
+        method: 'PUT',
         headers: getHeaders(),
         body: JSON.stringify({ text }),
       });
