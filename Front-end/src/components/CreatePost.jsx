@@ -6,66 +6,79 @@ import imageCompression from "browser-image-compression";
 
 export default function CreatePost({ onPost, onPostCreated }) {
   const [text, setText] = useState("");
-  const [image, setImage] = useState(null);
+  const [media, setMedia] = useState(null);
+  const [mediaType, setMediaType] = useState(null);
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
-  
+
   const defaultAvatar = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRDR8H0rgV-zmSodkT_erGjzA_VhfWE22Pg7Q&s";
 
-  const handleImageSelect = async (e) => {
+  const handleMediaSelect = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please select an image file');
+    if (file.type.startsWith('image/')) {
+      try {
+        const options = {
+          maxSizeMB: 1,
+          maxWidthOrHeight: 1920,
+          useWebWorker: true
+        };
+        const compressedFile = await imageCompression(file, options);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setMedia(reader.result);
+          setMediaType('image');
+        };
+        reader.readAsDataURL(compressedFile);
+      } catch (error) {
+        console.error("Error compressing image:", error);
+        toast.error("Failed to process image");
+      }
+    } else if (file.type.startsWith('video/')) {
+      try {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setMedia(reader.result);
+          setMediaType('video');
+        };
+        reader.readAsDataURL(file);
+      } catch (error) {
+        console.error("Error reading video file:", error);
+        toast.error("Failed to load video");
+      }
+    } else {
+      toast.error('Please select an image or video file');
       return;
-    }
-
-    try {
-      // Compress the image before reading to base64
-      const options = {
-        maxSizeMB: 1, // Max 1MB
-        maxWidthOrHeight: 1920,
-        useWebWorker: true
-      };
-      
-      const compressedFile = await imageCompression(file, options);
-      
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImage(reader.result);
-      };
-      reader.readAsDataURL(compressedFile);
-    } catch (error) {
-      console.error("Error compressing image:", error);
-      toast.error("Failed to process image");
     }
   };
 
-  const handleRemoveImage = () => {
-    setImage(null);
+  const handleRemoveMedia = () => {
+    setMedia(null);
+    setMediaType(null);
   };
 
   const handleSubmit = async () => {
-    if (!text.trim() && !image) return;
+    if (!text.trim() && !media) return;
 
     setLoading(true);
     try {
       const newPost = await api.posts.createPost(
         text,
-        image,
-        image ? 'image' : null
+        media,
+        mediaType
       );
-      
+
       if (onPostCreated) {
         onPostCreated(newPost);
       }
       if (onPost) {
         onPost(newPost);
       }
-      
+
       setText("");
-      setImage(null);
+      setMedia(null);
+      setMediaType(null);
     } catch (err) {
       console.error("Failed to create post:", err);
       toast.error(err.message || "Failed to create post");
@@ -94,18 +107,26 @@ export default function CreatePost({ onPost, onPostCreated }) {
         </div>
       </div>
 
-      {/* Selected Image Preview */}
-      {image && (
+      {/* Selected Media Preview */}
+      {media && (
         <div className="mt-3 relative rounded-xl border border-gray-100 overflow-hidden max-h-60 group">
-          <img
-            src={image}
-            alt="Preview"
-            className="w-full h-full object-cover"
-          />
+          {mediaType === 'video' ? (
+            <video
+              controls
+              src={media}
+              className="w-full h-full object-cover bg-black"
+            />
+          ) : (
+            <img
+              src={media}
+              alt="Preview"
+              className="w-full h-full object-cover"
+            />
+          )}
           <button
-            onClick={handleRemoveImage}
+            onClick={handleRemoveMedia}
             className="absolute top-2 right-2 h-7 w-7 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center font-bold text-xs cursor-pointer transition shadow"
-            title="Remove Image"
+            title="Remove media"
           >
             ✕
           </button>
@@ -119,18 +140,18 @@ export default function CreatePost({ onPost, onPostCreated }) {
           <label className="cursor-pointer">
             <input
               type="file"
-              accept="image/*"
-              onChange={handleImageSelect}
+              accept="image/*,video/*"
+              onChange={handleMediaSelect}
               className="hidden"
               disabled={loading}
             />
             <div className="flex items-center gap-1.5 px-3.5 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-150 rounded-xl transition shadow-sm">
               <img
                 src="https://cdn-icons-png.flaticon.com/128/739/739249.png"
-                alt="Upload Photo"
-                className="w-[18px] h-[18px]"
+                alt="Upload Media"
+                className="w-4 h-4"
               />
-              <span className="text-xs font-bold text-gray-700 hidden sm:inline">Add Photo</span>
+              <span className="text-xs font-bold text-gray-700 hidden sm:inline">Add Photo / Video</span>
             </div>
           </label>
         </div>
@@ -138,7 +159,7 @@ export default function CreatePost({ onPost, onPostCreated }) {
         {/* Post Button */}
         <button
           onClick={handleSubmit}
-          disabled={(!text.trim() && !image) || loading}
+          disabled={(!text.trim() && !media) || loading}
           className="bg-black text-white px-5 py-2 rounded-xl hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition font-semibold text-sm cursor-pointer shadow-sm"
         >
           {loading ? "Posting..." : "Post"}

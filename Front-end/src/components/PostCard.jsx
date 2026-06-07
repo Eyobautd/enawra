@@ -267,17 +267,25 @@ export default function PostCard({ post, onDelete, onUpdate, showDeleteButton = 
         </div>
       )}
 
-      {/* Media Image */}
-      {postData.mediaUrl && postData.mediaType === 'image' && (
+      {/* Media Preview */}
+      {postData.mediaUrl && (
         <div
           className="mt-4 overflow-hidden rounded-xl border border-gray-100 max-h-96 cursor-pointer bg-gray-50 flex items-center justify-center"
           onClick={() => setShowLightbox(true)}
         >
-          <img
-            src={postData.mediaUrl}
-            alt="Post media"
-            className="w-full h-full object-contain max-h-96 hover:opacity-95 transition"
-          />
+          {postData.mediaType === 'video' ? (
+            <video
+              controls
+              src={postData.mediaUrl}
+              className="w-full h-full object-contain max-h-96"
+            />
+          ) : (
+            <img
+              src={postData.mediaUrl}
+              alt="Post media"
+              className="w-full h-full object-contain max-h-96 hover:opacity-95 transition"
+            />
+          )}
         </div>
       )}
 
@@ -290,7 +298,7 @@ export default function PostCard({ post, onDelete, onUpdate, showDeleteButton = 
           <img
             src={liked ? "https://cdn-icons-png.flaticon.com/128/1077/1077086.png" : "https://cdn-icons-png.flaticon.com/128/1077/1077035.png"}
             alt="Like"
-            className="w-[18px] h-[18px]"
+            className="w-4.5 h-4.5"
           />
           <span>{likesCount}</span>
         </button>
@@ -299,7 +307,7 @@ export default function PostCard({ post, onDelete, onUpdate, showDeleteButton = 
           onClick={() => setShowComments(true)}
           className="flex items-center gap-1.5 hover:text-blue-600 transition cursor-pointer font-medium text-sm"
         >
-          <img src="https://cdn-icons-png.flaticon.com/128/134/134718.png" alt="Comment" className="w-[18px] h-[18px]" />
+          <img src="https://cdn-icons-png.flaticon.com/128/134/134718.png" alt="Comment" className="w-4.5 h-4.5" />
           <span>{commentsCount}</span>
         </button>
       </div>
@@ -324,16 +332,24 @@ export default function PostCard({ post, onDelete, onUpdate, showDeleteButton = 
                   </div>
                 </Link>
                 <p className="text-gray-800 text-[15px] leading-relaxed whitespace-pre-line overflow-y-auto max-h-[40vh]">{content}</p>
-                {postData.mediaUrl && postData.mediaType === 'image' && (
+                {postData.mediaUrl && (
                   <div
                     className="mt-3 overflow-hidden rounded-xl border border-gray-200 max-h-[30vh] cursor-pointer bg-gray-100 flex items-center justify-center"
                     onClick={() => setShowLightbox(true)}
                   >
-                    <img
-                      src={postData.mediaUrl}
-                      alt="Post media"
-                      className="w-full h-full object-contain hover:opacity-95 transition"
-                    />
+                    {postData.mediaType === 'video' ? (
+                      <video
+                        controls
+                        src={postData.mediaUrl}
+                        className="w-full h-full object-contain hover:opacity-95 transition"
+                      />
+                    ) : (
+                      <img
+                        src={postData.mediaUrl}
+                        alt="Post media"
+                        className="w-full h-full object-contain hover:opacity-95 transition"
+                      />
+                    )}
                   </div>
                 )}
               </div>
@@ -466,25 +482,34 @@ export default function PostCard({ post, onDelete, onUpdate, showDeleteButton = 
 
       {/* Lightbox Overlay */}
       {showLightbox && postData.mediaUrl && (
-        <div className="fixed inset-0 bg-black/90 flex justify-center items-center z-[60] p-4 backdrop-blur-sm" onClick={() => setShowLightbox(false)}>
+        <div className="fixed inset-0 bg-black/90 flex justify-center items-center z-60 p-4 backdrop-blur-sm" onClick={() => setShowLightbox(false)}>
           <button
             onClick={() => setShowLightbox(false)}
-            className="absolute top-4 right-4 h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold text-lg cursor-pointer transition z-[70]"
+            className="absolute top-4 right-4 h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold text-lg cursor-pointer transition z-70"
           >
             ✕
           </button>
-          <img
-            src={postData.mediaUrl}
-            alt="Full size media"
-            className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          />
+          {postData.mediaType === 'video' ? (
+            <video
+              controls
+              src={postData.mediaUrl}
+              className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+          ) : (
+            <img
+              src={postData.mediaUrl}
+              alt="Full size media"
+              className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+          )}
         </div>
       )}
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-[60] p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-60 p-4 backdrop-blur-sm">
           <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl border border-gray-100">
             <h3 className="text-lg font-bold text-gray-900 mb-2">Delete Post?</h3>
             <p className="text-gray-600 text-sm mb-6">Are you sure you want to delete this post? This action cannot be undone.</p>
