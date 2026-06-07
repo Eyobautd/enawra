@@ -11,7 +11,7 @@ export default function OtherProfile() {
   const { username } = useParams();
   const { user: currentUser, updateUser } = useAuth();
   const navigate = useNavigate();
-  
+
   const [profileUser, setProfileUser] = useState(null);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -62,20 +62,20 @@ export default function OtherProfile() {
     try {
       const result = await api.users.toggleFollow(profileUser._id);
       setIsFollowing(result.isFollowing);
-      
+
       if (result.following) {
         updateUser({ following: result.following });
       }
-      
+
       // Update local profile user's followers count for immediate UI feedback
       const currentUserId = currentUser._id || currentUser.id;
       setProfileUser(prev => ({
         ...prev,
-        followers: result.isFollowing 
+        followers: result.isFollowing
           ? [...(prev.followers || []), currentUserId]
           : (prev.followers || []).filter(id => id && id.toString() !== currentUserId.toString())
       }));
-      
+
       toast.success(result.message);
     } catch (err) {
       toast.error(err.message || "Failed to follow user");
@@ -115,11 +115,10 @@ export default function OtherProfile() {
           <button
             onClick={handleFollowToggle}
             disabled={togglingFollow}
-            className={`rounded-xl px-6 py-2 text-sm font-semibold transition cursor-pointer shadow-sm disabled:opacity-50 ${
-              isFollowing
+            className={`rounded-xl px-6 py-2 text-sm font-semibold transition cursor-pointer shadow-sm disabled:opacity-50 ${isFollowing
                 ? "border border-gray-300 text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200"
                 : "bg-black text-white hover:bg-gray-800"
-            }`}
+              }`}
           >
             {togglingFollow ? "Loading..." : isFollowing ? "Unfollow" : "Follow"}
           </button>
@@ -130,7 +129,7 @@ export default function OtherProfile() {
         <h3 className="text-lg font-bold text-gray-900 border-b border-gray-100 pb-3">
           {profileUser.fullName}'s Posts
         </h3>
-        
+
         {posts.length === 0 ? (
           <div className="rounded-2xl border border-gray-200 bg-white p-8 text-center text-gray-500 font-medium shadow-sm">
             This user hasn't posted anything yet.
@@ -141,6 +140,7 @@ export default function OtherProfile() {
               <PostCard
                 key={post._id}
                 post={post}
+                onRepost={(repostedPost) => setPosts((prevPosts) => [repostedPost, ...prevPosts])}
               />
             ))}
           </div>

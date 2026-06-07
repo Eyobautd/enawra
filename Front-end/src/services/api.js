@@ -69,6 +69,13 @@ export const api = {
       });
       return handleResponse(res);
     },
+    repostPost: async (postId) => {
+      const res = await fetch(`${BASE_URL}/posts/${postId}/repost`, {
+        method: 'POST',
+        headers: getHeaders(),
+      });
+      return handleResponse(res);
+    },
     updatePost: async (postId, text, mediaUrl = null, mediaType = null) => {
       const res = await fetch(`${BASE_URL}/posts/${postId}`, {
         method: 'PUT',

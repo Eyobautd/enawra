@@ -12,7 +12,7 @@ export default function Notifications() {
     try {
       const data = await api.notifications.getNotifications();
       setNotifications(data);
-      
+
       // Auto-mark notifications as read on load
       if (data.some(n => !n.read)) {
         await api.notifications.markAsRead();
@@ -51,27 +51,30 @@ export default function Notifications() {
             const senderName = n.sender?.fullName || n.sender?.username || "Someone";
             const senderAvatar = n.sender?.profilePhoto || defaultAvatar;
             const postText = n.post?.text ? `"${n.post.text.substring(0, 30)}${n.post.text.length > 30 ? "..." : ""}"` : "your post";
-            const time = n.createdAt 
-              ? new Date(n.createdAt).toLocaleDateString(undefined, { 
-                  month: 'short', 
-                  day: 'numeric', 
-                  hour: '2-digit', 
-                  minute: '2-digit' 
-                }) 
+            const time = n.createdAt
+              ? new Date(n.createdAt).toLocaleDateString(undefined, {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              })
               : "";
 
             return (
-              <div 
-                key={n._id} 
-                className={`flex gap-4 items-center p-4 rounded-2xl border transition hover:shadow-sm duration-200 bg-white ${
-                  n.read ? "border-gray-150" : "border-black/10 ring-1 ring-black/5 bg-gray-50/20"
-                }`}
+              <div
+                key={n._id}
+                className={`flex gap-4 items-center p-4 rounded-2xl border transition hover:shadow-sm duration-200 bg-white ${n.read ? "border-gray-150" : "border-black/10 ring-1 ring-black/5 bg-gray-50/20"
+                  }`}
               >
                 {/* Action Icon Indicator */}
                 <div className="flex-shrink-0">
                   {n.type === "like" ? (
                     <div className="h-9 w-9 rounded-full bg-white border border-gray-300  flex items-center justify-center text-sm shadow-sm font-bold">
                       <img src="https://cdn-icons-png.flaticon.com/128/3916/3916769.png" alt="Like" className="w-5 h-5" />
+                    </div>
+                  ) : n.type === "repost" ? (
+                    <div className="h-9 w-9 rounded-full bg-white border border-gray-300  flex items-center justify-center text-sm shadow-sm font-bold">
+                      <img src="https://cdn-icons-png.flaticon.com/128/545/545682.png" alt="Repost" className="w-5 h-5" />
                     </div>
                   ) : (
                     <div className="h-9 w-9 rounded-full bg-white border border-gray-300  flex items-center justify-center text-sm shadow-sm font-bold">
@@ -91,7 +94,7 @@ export default function Notifications() {
                 <div className="flex-1">
                   <p className="text-sm text-gray-800 leading-normal">
                     <span className="font-bold text-gray-950">{senderName}</span>{" "}
-                    {n.type === "like" ? "liked" : "commented on"} your post{" "}
+                    {n.type === "like" ? "liked" : n.type === "repost" ? "reposted" : "commented on"} your post{" "}
                     <span className="font-semibold text-gray-600 break-words italic">{postText}</span>
                   </p>
                   <span className="text-[10px] text-gray-400 font-semibold uppercase mt-1 block">

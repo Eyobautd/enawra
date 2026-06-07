@@ -9,11 +9,11 @@ import imageCompression from "browser-image-compression";
 
 export default function Profile() {
   const { user, updateUser } = useAuth();
-  
+
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  
+
   // Follow Modal States
   const [modalType, setModalType] = useState(null); // 'followers' or 'following'
 
@@ -64,7 +64,9 @@ export default function Profile() {
   const handlePostDeleted = (postId) => {
     setPosts((prevPosts) => prevPosts.filter((p) => p._id !== postId));
   };
-
+  const handlePostReposted = (repostedPost) => {
+    setPosts((prevPosts) => [repostedPost, ...prevPosts]);
+  };
   const handleImageSelect = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -80,9 +82,9 @@ export default function Profile() {
         maxWidthOrHeight: 1024,
         useWebWorker: true
       };
-      
+
       const compressedFile = await imageCompression(file, options);
-      
+
       const reader = new FileReader();
       reader.onloadend = () => {
         setProfilePhoto(reader.result);
@@ -97,14 +99,14 @@ export default function Profile() {
   const handleSaveProfile = async () => {
     if (!fullName.trim()) return toast.error("Full Name cannot be empty");
     if (!usernameInput.trim()) return toast.error("Username cannot be empty");
-    
+
     if (passwordInput || confirmPasswordInput || oldPasswordInput) {
       if (!oldPasswordInput) return toast.error("Please enter your current password.");
       if (!passwordInput) return toast.error("Please enter a new password.");
       if (passwordInput.length < 8) return toast.error("New password must be at least 8 characters long.");
       if (passwordInput !== confirmPasswordInput) return toast.error("New passwords do not match.");
     }
-    
+
     setSaving(true);
     try {
       const payload = {
@@ -112,14 +114,14 @@ export default function Profile() {
         username: usernameInput,
         profilePhoto
       };
-      
+
       if (passwordInput) {
         payload.password = passwordInput;
         payload.oldPassword = oldPasswordInput;
       }
-      
+
       const updatedData = await api.users.updateProfile(payload);
-      
+
       // Update global context state
       updateUser(updatedData);
       setShowEditModal(false);
@@ -182,6 +184,7 @@ export default function Profile() {
                 key={post._id}
                 post={post}
                 onDelete={handlePostDeleted}
+                onRepost={handlePostReposted}
                 showDeleteButton={true}
               />
             ))}
@@ -194,7 +197,7 @@ export default function Profile() {
         <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl border border-gray-105 relative">
             <h3 className="text-lg font-bold text-gray-950 mb-5">Edit Profile</h3>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">
@@ -266,9 +269,9 @@ export default function Profile() {
                 </label>
                 <div className="flex items-center gap-4">
                   {profilePhoto && (
-                    <img 
-                      src={profilePhoto} 
-                      alt="Preview" 
+                    <img
+                      src={profilePhoto}
+                      alt="Preview"
                       className="w-12 h-12 rounded-full object-cover border border-gray-200"
                     />
                   )}

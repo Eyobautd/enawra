@@ -4,6 +4,7 @@ const postController = require('../controllers/postController');
 const { protect } = require('../middleware/authMiddleware');
 
 router.post('/', protect, postController.createPost);
+router.post('/:id/repost', protect, postController.repostPost);
 router.get('/', protect, postController.getFeed);
 router.get('/following', protect, postController.getFollowingFeed);
 router.get('/user/:userId', protect, postController.getUserPosts);

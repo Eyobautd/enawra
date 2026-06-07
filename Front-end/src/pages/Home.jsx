@@ -37,6 +37,10 @@ export default function Home() {
     setPosts((prevPosts) => [newPost, ...prevPosts]);
   };
 
+  const handlePostReposted = (repostedPost) => {
+    setPosts((prevPosts) => [repostedPost, ...prevPosts]);
+  };
+
   const handlePostDeleted = (postId) => {
     setPosts((prevPosts) => prevPosts.filter((p) => p._id !== postId));
   };
@@ -50,21 +54,19 @@ export default function Home() {
         <div className="flex mb-6 border-b border-gray-200">
           <button
             onClick={() => setActiveTab("explore")}
-            className={`flex-1 py-3 text-sm font-semibold text-center transition ${
-              activeTab === "explore"
+            className={`flex-1 py-3 text-sm font-semibold text-center transition ${activeTab === "explore"
                 ? "text-black border-b-2 border-black"
                 : "text-gray-400 hover:text-gray-700"
-            }`}
+              }`}
           >
             Explore
           </button>
           <button
             onClick={() => setActiveTab("following")}
-            className={`flex-1 py-3 text-sm font-semibold text-center transition ${
-              activeTab === "following"
+            className={`flex-1 py-3 text-sm font-semibold text-center transition ${activeTab === "following"
                 ? "text-black border-b-2 border-black"
                 : "text-gray-400 hover:text-gray-700"
-            }`}
+              }`}
           >
             Following
           </button>
@@ -90,6 +92,7 @@ export default function Home() {
                 key={p._id}
                 post={p}
                 onDelete={handlePostDeleted}
+                onRepost={handlePostReposted}
               />
             ))}
           </div>

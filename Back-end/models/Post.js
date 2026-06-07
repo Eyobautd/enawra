@@ -19,6 +19,11 @@ const PostSchema = new mongoose.Schema({
     enum: ['image', 'video', null],
     default: null
   },
+  originalPost: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Post',
+    default: null
+  },
   isEdited: {
     type: Boolean,
     default: false

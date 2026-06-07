@@ -53,7 +53,7 @@ export default function RightSidebar() {
   const defaultAvatar = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRDR8H0rgV-zmSodkT_erGjzA_VhfWE22Pg7Q&s";
 
   return (
-    <aside className="w-64 bg-white border-l border-gray-200 p-5 hidden lg:block sticky top-[72px] h-[calc(100vh-72px)] overflow-y-auto">
+    <aside className="w-64 bg-white border-l border-gray-200 p-5 hidden lg:block sticky top-18 h-[calc(100vh-72px)] overflow-y-auto">
       <h2 className="font-bold text-gray-900 mb-4 text-sm uppercase tracking-wider">Suggested Creators</h2>
       
       {loading ? (
@@ -74,7 +74,7 @@ export default function RightSidebar() {
                     alt={c.fullName}
                     className="w-9 h-9 rounded-full object-cover border border-gray-150 group-hover:border-gray-300"
                   />
-                  <div className="max-w-[110px]">
+                  <div className="max-w-27.5">
                     <p className="font-semibold text-xs text-gray-950 truncate leading-none group-hover:text-blue-600 transition">{c.fullName}</p>
                     <p className="text-[10px] text-gray-400 truncate mt-1">@{c.username}</p>
                   </div>
@@ -86,8 +86,7 @@ export default function RightSidebar() {
                     isFollowing 
                       ? "bg-gray-100 border-gray-200 text-gray-500 hover:bg-gray-200" 
                       : "bg-black border-black text-white hover:bg-gray-800"
-                  }`}
-                >
+                  }`}>
                   {isFollowing ? "Unfollow" : "Follow"}
                 </button>
               </li>

@@ -4,7 +4,7 @@ import { api } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "sonner";
 
-export default function PostCard({ post, onDelete, onUpdate, showDeleteButton = false }) {
+export default function PostCard({ post, onDelete, onUpdate, onRepost, showDeleteButton = false }) {
   const { user: currentUser } = useAuth();
 
   const [likesCount, setLikesCount] = useState(post.likesCount || 0);
@@ -15,6 +15,7 @@ export default function PostCard({ post, onDelete, onUpdate, showDeleteButton = 
   const [commentText, setCommentText] = useState("");
   const [showComments, setShowComments] = useState(false);
   const [loadingComments, setLoadingComments] = useState(false);
+  const [loadingRepost, setLoadingRepost] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showLightbox, setShowLightbox] = useState(false);
@@ -42,6 +43,7 @@ export default function PostCard({ post, onDelete, onUpdate, showDeleteButton = 
 
   // Check if current user is the author of this post
   const isOwnPost = currentUser && post.author && (post.author._id === currentUser._id || post.author === currentUser._id);
+  const canEditPost = isOwnPost && !postData?.originalPost;
 
   // Sync state with post prop
   useEffect(() => {
@@ -93,6 +95,7 @@ export default function PostCard({ post, onDelete, onUpdate, showDeleteButton = 
   };
 
   const handlePostEditStart = () => {
+    if (!canEditPost) return;
     setIsEditingPost(true);
   };
 
@@ -123,6 +126,24 @@ export default function PostCard({ post, onDelete, onUpdate, showDeleteButton = 
     } catch (err) {
       console.error("Error updating post:", err);
       toast.error(err.message || "Failed to update post");
+    }
+  };
+
+  const handleRepost = async () => {
+    if (!postData?._id) return;
+    setLoadingRepost(true);
+
+    try {
+      const repostedPost = await api.posts.repostPost(postData._id);
+      toast.success("Post reposted successfully");
+      if (onRepost) {
+        onRepost(repostedPost);
+      }
+    } catch (err) {
+      console.error("Error reposting post:", err);
+      toast.error(err.message || "Failed to repost");
+    } finally {
+      setLoadingRepost(false);
     }
   };
 
@@ -215,12 +236,14 @@ export default function PostCard({ post, onDelete, onUpdate, showDeleteButton = 
 
         {isOwnPost && (
           <div className="flex items-center gap-2">
-            <button
-              onClick={handlePostEditStart}
-              className="text-xs font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition"
-            >
-              Edit
-            </button>
+            {canEditPost && (
+              <button
+                onClick={handlePostEditStart}
+                className="text-xs font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition"
+              >
+                Edit
+              </button>
+            )}
             {showDeleteButton && (
               <button
                 onClick={handleDeleteClick}
@@ -233,6 +256,54 @@ export default function PostCard({ post, onDelete, onUpdate, showDeleteButton = 
           </div>
         )}
       </div>
+
+      {postData.originalPost && (
+        <div className="mt-4 rounded-2xl border border-gray-200 bg-gray-50 p-4">
+          <div className="text-xs uppercase tracking-[0.18em] text-gray-500 font-semibold mb-3">Reposted</div>
+          <Link to={`/profile/${postData.originalPost.author?.username || ''}`} className="flex items-center gap-3 hover:opacity-80 transition group mb-3">
+            <img
+              src={postData.originalPost.author?.profilePhoto || defaultAvatar}
+              alt={postData.originalPost.author?.fullName || postData.originalPost.author?.username}
+              className="w-9 h-9 rounded-full object-cover border border-gray-200 shadow-sm"
+            />
+            <div>
+              <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition text-sm">
+                {postData.originalPost.author?.fullName || postData.originalPost.author?.username || 'Anonymous'}
+              </h3>
+              <p className="text-xs text-gray-500">
+                @{postData.originalPost.author?.username || ''} • {postData.originalPost.createdAt ? new Date(postData.originalPost.createdAt).toLocaleDateString(undefined, {
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                }) : 'just now'}
+              </p>
+            </div>
+          </Link>
+          {postData.originalPost.text && (
+            <p className="text-gray-800 text-sm leading-relaxed whitespace-pre-line mb-3">
+              {postData.originalPost.text}
+            </p>
+          )}
+          {postData.originalPost.mediaUrl && (
+            <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white">
+              {postData.originalPost.mediaType === 'video' ? (
+                <video
+                  controls
+                  src={postData.originalPost.mediaUrl}
+                  className="w-full h-full object-contain max-h-80"
+                />
+              ) : (
+                <img
+                  src={postData.originalPost.mediaUrl}
+                  alt="Original post media"
+                  className="w-full h-full object-contain max-h-80"
+                />
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Content */}
       {isEditingPost ? (
@@ -310,6 +381,21 @@ export default function PostCard({ post, onDelete, onUpdate, showDeleteButton = 
           <img src="https://cdn-icons-png.flaticon.com/128/134/134718.png" alt="Comment" className="w-4.5 h-4.5" />
           <span>{commentsCount}</span>
         </button>
+
+        {!isOwnPost && (
+          <button
+            onClick={handleRepost}
+            disabled={loadingRepost}
+            className="flex items-center gap-1.5 hover:text-green-600 transition cursor-pointer font-medium text-sm disabled:opacity-50"
+          >
+            <img
+              src="https://cdn-icons-png.flaticon.com/128/545/545682.png"
+              alt="Repost"
+              className="w-4.5 h-4.5"
+            />
+            <span>{loadingRepost ? 'Reposting…' : 'Repost'}</span>
+          </button>
+        )}
       </div>
 
       {/* Detailed Comments Overlay modal */}
