@@ -67,7 +67,7 @@ export default function Notifications() {
                   }`}
               >
                 {/* Action Icon Indicator */}
-                <div className="flex-shrink-0">
+                <div className="shrink-0">
                   {n.type === "like" ? (
                     <div className="h-9 w-9 rounded-full bg-white border border-gray-300  flex items-center justify-center text-sm shadow-sm font-bold">
                       <img src="https://cdn-icons-png.flaticon.com/128/3916/3916769.png" alt="Like" className="w-5 h-5" />
@@ -95,7 +95,7 @@ export default function Notifications() {
                   <p className="text-sm text-gray-800 leading-normal">
                     <span className="font-bold text-gray-950">{senderName}</span>{" "}
                     {n.type === "like" ? "liked" : n.type === "repost" ? "reposted" : "commented on"} your post{" "}
-                    <span className="font-semibold text-gray-600 break-words italic">{postText}</span>
+                    <span className="font-semibold text-gray-600 wrap-break-word italic">{postText}</span>
                   </p>
                   <span className="text-[10px] text-gray-400 font-semibold uppercase mt-1 block">
                     {time}
@@ -104,7 +104,7 @@ export default function Notifications() {
 
                 {/* Unread dot */}
                 {!n.read && (
-                  <div className="h-2.5 w-2.5 rounded-full bg-blue-600 shadow-sm flex-shrink-0 animate-pulse"></div>
+                  <div className="h-2.5 w-2.5 rounded-full bg-blue-600 shadow-sm shrink-0 animate-pulse"></div>
                 )}
               </div>
             );
